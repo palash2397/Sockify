@@ -1,0 +1,22 @@
+✅ Emit Events (frontend → backend)
+
+| Event          | Data Sent | Purpose                                            |
+| -------------- | --------- | -------------------------------------------------- |
+| `"joinChat"`   | `chatId`  | Join a chat room to receive typing/message events. |
+| `"typing"`     | `chatId`  | Notify others that this user is typing.            |
+| `"stopTyping"` | `chatId`  | Notify others typing stopped.                      |
+
+
+
+✅ Listen Events (backend → frontend)
+
+
+| Event               | Data Received   | Description                                     |
+| ------------------- | --------------- | ----------------------------------------------- |
+| `"connected"`       | —               | Emitted when socket connection is established.  |
+| `"typing"`          | `chatId`        | Someone else is typing in this chat.            |
+| `"stopTyping"`      | `chatId`        | Someone stopped typing.                         |
+| `"messageReceived"` | `messageObject` | A new message was received in the current chat. |
+| `"newChat"`         | `chatObject`    | A new chat was created involving this user.     |
+| `"leaveChat"`       | `chatObject`    | Someone deleted/left the chat.                  |
+| `"socketError"`     | `errorMessage`  | Any socket error (invalid token, etc).          |
