@@ -1,6 +1,5 @@
-import cookie from "cookie";
+
 import jwt from "jsonwebtoken";
-import { Server, Socket } from "socket.io";
 import { ChatEventEnum } from '../utils/constants.js';
 import { PrismaClient } from '@prisma/client';// Assuming you have this utility function
 const prisma = new PrismaClient();
@@ -10,9 +9,6 @@ dotenv.config();
 const mountJoinChatEvent = (socket) => {
   socket.on(ChatEventEnum.JOIN_CHAT_EVENT, (chatId) => {
     console.log(`User joined the chat 🤝. chatId: `, chatId);
-    // joining the room with the chatId will allow specific events to be fired where we don't bother about the users like typing events
-    // E.g. When user types we don't want to emit that event to specific participant.
-    // We want to just emit that to the chat where the typing is happening
     socket.join(chatId);
   });
 };
@@ -32,7 +28,7 @@ const mountParticipantStoppedTypingEvent = (socket) => {
 const initializeSocketIO = (io) => {
   return io.on("connection", async (socket) => {
     try {
-     
+
       const token = socket.handshake.headers.authorization.replace('Bearer ', '');
 
       // Verify and decode the token
@@ -53,21 +49,38 @@ const initializeSocketIO = (io) => {
       }
       socket.user = user;
 
+      // Mark user online in DB
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { isOnline: true },
+      });
+
+      // Notify all friends/participants that user is online
+      io.emit("userOnline", { userId: user.id, isOnline: true });
+
+
       socket.join(user.id.toString());
       socket.emit(ChatEventEnum.CONNECTED_EVENT);
       console.log("User connected 🗼. userId: ", user.id);
 
-   
+
       mountJoinChatEvent(socket);
       mountParticipantTypingEvent(socket);
       mountParticipantStoppedTypingEvent(socket);
 
-      socket.on(ChatEventEnum.DISCONNECT_EVENT, () => {
+      socket.on(ChatEventEnum.DISCONNECT_EVENT, async() => {
         console.log("user has disconnected 🚫. userId: " + socket.id);
 
         if (socket.id) {
           socket.leave(socket.id);
         }
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { isOnline: false },
+        });
+        console.log(`🔴 User offline: ${user.full_name} (${user.id})`);
+        io.emit("userOffline", { userId: user.id, isOnline: false });
       });
     } catch (error) {
       socket.emit(
