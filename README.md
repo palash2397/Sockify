@@ -145,12 +145,6 @@ sockify/
 
 ---
 
-## 📸 UI Preview  
-*(Add screenshots or GIFs here once UI is ready)*
-
----
-
-
 
 ## ⭐ Contribute
 
